@@ -2,24 +2,27 @@ import { createContext, useContext, useEffect, useReducer } from "react";
 import { POSSIBLE_ACTIONS, CARDINAL_DIRECTIONS, SIZE_X, SIZE_Y, LEVELS } from "../config";
 
 const GameContext = createContext();
+const LOCAL_STORAGE_MOVES_KEY = "x23AF19x3Bd4xx5lUOA";
+const LOCAL_STORAGE_HIGHEST_LEVEL_KEY = "s29A01vx39d4xe5lPOA"
 
 const initialState = {
     playerPos: {
         x: 0,
         y: 0,
     },
-    actions: [],
     direction: CARDINAL_DIRECTIONS.NORTH,
     running: false,
     levelIndex: 0,
-    highestLevel: 15,
+    highestLevel: localStorage.getItem(LOCAL_STORAGE_HIGHEST_LEVEL_KEY) == null ? 0 : +localStorage.getItem(LOCAL_STORAGE_HIGHEST_LEVEL_KEY),
     washingMachine: {...LEVELS[0].washingMachine},
     laundry: [...LEVELS[0].laundry],
     currentlyHolding: null,
-    speed: 0.1,
+    speed: 4,
     teleportation: [],
-    blocks: []
+    blocks: [],
+    movesInLevel: localStorage.getItem(LOCAL_STORAGE_MOVES_KEY) == null ? LEVELS.map(() => []) : JSON.parse(localStorage.getItem(LOCAL_STORAGE_MOVES_KEY)),
 }
+initialState.actions = initialState.movesInLevel[0];
 
 const reducer = function(state, { type, payload }){
     const level = LEVELS[state.levelIndex];
@@ -40,21 +43,28 @@ const reducer = function(state, { type, payload }){
                 teleportation: level.teleportation ? [...level.teleportation] : [] ,
                 currentlyHolding: null,
                 blocks: level.blocks ? [...level.blocks] : [],
+
             }
         case "on-action-added":
+            localStorage.setItem(LOCAL_STORAGE_MOVES_KEY, JSON.stringify([...state.movesInLevel].map((actions, i) => i == state.levelIndex ? [...actions, payload] : actions)));
             return {
                 ...state,
-                actions: [...state.actions, payload]
+                actions: [...state.actions, payload],
+                movesInLevel: [...state.movesInLevel].map((actions, i) => i == state.levelIndex ? [...actions, payload] : actions),
             }
         case "on-set-actions":
+            localStorage.setItem(LOCAL_STORAGE_MOVES_KEY, JSON.stringify([...state.movesInLevel].map((actions, i) => i == state.levelIndex ? payload : actions)));
             return {
                 ...state,
                 actions: payload,
+                movesInLevel: [...state.movesInLevel].map((actions, i) => i == state.levelIndex ? payload : actions),
             }
         case "on-delete-action":
+            localStorage.setItem(LOCAL_STORAGE_MOVES_KEY, JSON.stringify([...state.movesInLevel].map((actions, i) => i == state.levelIndex ? state.actions.filter(action => action.id !== payload) : actions)));
             return {
                 ...state,
                 actions: state.actions.filter(action => action.id !== payload),
+                movesInLevel: [...state.movesInLevel].map((actions, i) => i == state.levelIndex ? state.actions.filter(action => action.id !== payload) : actions),
             }
         case "rot":
             return {
@@ -80,6 +90,7 @@ const reducer = function(state, { type, payload }){
         case "set-level-index":
             return {
                 ...state,
+                actions: [...state.movesInLevel[payload]],
                 levelIndex: payload,
             }
         case "place-washing-machine":
@@ -93,6 +104,7 @@ const reducer = function(state, { type, payload }){
                 speed: payload,
             }
         case "new-highest-level":
+            localStorage.setItem(LOCAL_STORAGE_HIGHEST_LEVEL_KEY, JSON.stringify(payload));
             return {
                 ...state,
                 highestLevel: payload,
@@ -101,17 +113,21 @@ const reducer = function(state, { type, payload }){
             console.log("You cant spell!");
             return state;
     }
+
 }
 
 let id = 0;
 
 const GameContextProvider = function({ children }){
-    const [{ playerPos, direction, actions, running, levelIndex, washingMachine, laundry, currentlyHolding, blocks, speed, highestLevel, teleportation }, dispatch] = useReducer(reducer, initialState);
+    const [
+        { playerPos, direction, actions, running, levelIndex, washingMachine, laundry, currentlyHolding, blocks, speed, highestLevel, teleportation }, 
+        dispatch
+    ] = useReducer(reducer, initialState);
 
     useEffect(() => {
         dispatch({ type: "set-level", payload: levelIndex });
 
-        if(highestLevel < levelIndex && highestLevel !== levelIndex){
+        if(highestLevel < levelIndex){
             dispatch({ type: "new-highest-level", payload: levelIndex })
         }
     }, [levelIndex, highestLevel]);
@@ -134,9 +150,9 @@ const GameContextProvider = function({ children }){
     }
 
     const HandleRunGame = async function(){
-        dispatch({type: "on-start-game"})
+        dispatch({ type: "on-start-game" })
         await HandleComputeActions();
-        dispatch({type: "on-end-game"})
+        dispatch({ type: "on-end-game" })
         dispatch({ type: "set-level" })
     }
 
@@ -152,6 +168,7 @@ const GameContextProvider = function({ children }){
     const HandlePlaceWashmachine = function(curPos, currentlyHolding){
         if (curPos.x !== washingMachine.x || curPos.y !== washingMachine.y) return false;
         if (!currentlyHolding) return false;
+
         dispatch({ type: "place-washing-machine" });
         return true;
     }
@@ -198,13 +215,12 @@ const GameContextProvider = function({ children }){
                         currentlyHoldingSomething = false;
                         
                         if (currentLaundryAmt == 0) {
-                            dispatch({ type: "set-level-index", payload: levelIndex == LEVELS.length - 1 ? levelIndex : levelIndex+1})
+                            dispatch({ type: "set-level-index", payload: levelIndex == LEVELS.length - 1 ? levelIndex : levelIndex+1});
                         }
                     }
                     break;
                 case POSSIBLE_ACTIONS.TELEPORT.name:
                     if(teleportation.some(teleporter => teleporter.x == currentPos.x && teleporter.y == currentPos.y)){
-                        console.log("teleportnig");
                         currentPos = {...(teleportation.find(teleporter => (teleporter.x != currentPos.x || teleporter.y != currentPos.y)))};
                         dispatch({ type: "on-move", payload: currentPos });
                     }
