@@ -1,0 +1,55 @@
+.container{
+    height: 530px;
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    overflow: scroll;
+    overflow-x: hidden;
+    padding-left: 0;
+    border: 3px solid;
+}
+
+.item {
+    list-style: none;
+    height: 40px;
+    text-align: left;
+    font-size: 19px;
+    font-weight: bold;
+    color: rgb(0, 0, 0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.innerContainer{
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+}
+
+.innerContainer > button {
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    font-size: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(51, 179, 230);
+}
+
+.delete {
+    width: 20px;
+}
+
+.actionIcon{
+    width: 30px;
+    background-color: rgb(51, 179, 230);
+    padding: 3px;
+    border-radius: 50%;
+}
+

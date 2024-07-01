@@ -1,0 +1,49 @@
+.column {
+    display: flex;
+    gap: 1px;
+}
+
+.table {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.field {
+    position: relative;
+    border: var(--field-border-size) solid var(--field-color);
+    width: var(--field-size);
+    height: var(--field-size);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1px;
+    background-color: rgb(114, 169, 240);
+    border-radius: 10px;
+    
+    z-index: -2;
+}
+
+.field > img {
+    width: 90px;
+    height: 90px;
+}
+
+.miniInfoBottom {
+    position: absolute;
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+    bottom: -50px;
+}
+
+.miniInfoLeft {
+    position: absolute;
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+    right: -25px;
+}
+
+.abs {
+    position: absolute;
+    z-index: -1;
+}
